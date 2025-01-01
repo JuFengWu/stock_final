@@ -22,5 +22,8 @@ from web_tool import views
 urlpatterns = [
     path("admin/", admin.site.urls),
     path('hello/', views.hello_world), #新增網址與對應的動作 #http://localhost/hello/
-    path('ana_stock/', views.analyze_stock),
+    path('ana_stock/', views.analyze_stock, name='analyze_stock'),
+    path('register/', views.register_user, name='register_user'),
+    path('login/', views.login_user, name='login_user'),
+    path('logout/', views.logout_user, name='logout_user'),
 ]
