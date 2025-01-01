@@ -1,0 +1,5 @@
+python manage.py runserver 0.0.0.0:80
+
+localhost/ana_stock
+
+
