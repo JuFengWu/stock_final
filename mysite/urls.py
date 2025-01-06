@@ -26,4 +26,6 @@ urlpatterns = [
     path('register/', views.register_user, name='register_user'),
     path('login/', views.login_user, name='login_user'),
     path('logout/', views.logout_user, name='logout_user'),
+    path('api/stock-data/', views.get_stock_data, name='get_stock_data'),
+    path('stock_data/', views.show_stock_data, name='show_stock_data'),
 ]
