@@ -202,8 +202,9 @@ def analyze_stock(request):
 from .models import Profile
 from django.contrib.auth.decorators import login_required
 import json
-@login_required
+
 def save_stock(request):
+    print("save_stock")
     if request.method == "POST":
         # 獲取當前用戶
         user = request.user
@@ -213,12 +214,55 @@ def save_stock(request):
 
         # 更新模型
         profile, created = Profile.objects.get_or_create(user=user)
-        profile.selected_stocks2 = stock_code  # 保存股票代號
+        
+        # 獲取現有的股票代號，將新代號附加進去
+        if profile.selected_stocks2:
+            current_stocks = profile.selected_stocks2.split(',')  # 分解現有股票代號
+        else:
+            current_stocks = []
+        
+        # 防止重複添加
+        if stock_code not in current_stocks:
+            current_stocks.append(stock_code)
+        
+        # 保存更新的股票代號列表
+        profile.selected_stocks2 = ','.join(current_stocks)
         profile.save()
 
         return JsonResponse({"message": "股票代號已保存！"}, status=200)
 
     return JsonResponse({"message": "無效請求"}, status=400)
+
+@login_required
+def delete_stock(request):
+    if request.method == "POST":
+        user = request.user
+        data = json.loads(request.body)
+        stock_code = data.get("stock_code", "")
+
+        profile, created = Profile.objects.get_or_create(user=user)
+        if profile.selected_stocks2:
+            stocks = profile.selected_stocks2.split(',')
+            if stock_code in stocks:
+                stocks.remove(stock_code)
+                profile.selected_stocks2 = ','.join(stocks)  # 更新保存的股票
+                profile.save()
+
+        return JsonResponse({"message": "股票已刪除！"}, status=200)
+
+    return JsonResponse({"message": "無效請求"}, status=400)
+
+@login_required
+def check_save(request):
+    user = request.user
+    profile, created = Profile.objects.get_or_create(user=user)
+    print("check_save")
+
+    # 將保存的股票代號分解成列表（假設用逗號分隔多個代號）
+    saved_stocks = profile.selected_stocks2.split(',') if profile.selected_stocks2 else []
+    print(saved_stocks)
+
+    return render(request, 'check_save.html', {'saved_stocks': saved_stocks})
 
 def hello_world(request):
     time = datetime.now()

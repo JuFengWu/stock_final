@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>已保存的股票</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        function deleteStock(stockCode) {
+            fetch("{% url 'delete_stock' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ stock_code: stockCode })
+            }).then(response => {
+                if (response.ok) {
+                    alert("股票已刪除！");
+                    // 從頁面移除該股票
+                    d3.select(`#stock-${stockCode}`).remove();
+                } else {
+                    alert("刪除失敗！");
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>已保存的股票</h1>
+    <div id="stocks"></div>
+
+    <script>
+        // 從後端獲取的保存的股票
+        const savedStocks = {{ saved_stocks|safe }};
+        
+        // 使用 D3 顯示股票代號
+        const container = d3.select("#stocks");
+        savedStocks.forEach(stock => {
+            const stockDiv = container.append("div")
+                .attr("id", `stock-${stock}`)
+                .style("margin", "10px")
+                .style("padding", "10px")
+                .style("border", "1px solid black")
+                .style("display", "flex")
+                .style("justify-content", "space-between")
+                .style("align-items", "center");
+
+            stockDiv.append("span").text(stock);
+
+            stockDiv.append("button")
+                .text("刪除")
+                .on("click", () => deleteStock(stock));
+        });
+    </script>
+</body>
+</html>

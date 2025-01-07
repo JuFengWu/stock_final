@@ -29,4 +29,7 @@ urlpatterns = [
     path('api/stock-data/', views.get_stock_data, name='get_stock_data'),
     path('stock_data/', views.show_stock_data, name='show_stock_data'),
     path('save_stock/', views.save_stock, name='save_stock'),
+    path('analyze_stock/',views.analyze_stock, name='analyze_stock'),
+    path('check_save/', views.check_save, name='check_save'),
+    path('delete_stock/', views.delete_stock, name='delete_stock'),
 ]
