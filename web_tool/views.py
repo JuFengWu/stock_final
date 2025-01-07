@@ -199,6 +199,26 @@ def analyze_stock(request):
 
     return render(request, 'ana_stock.html', {'days': days,'heatmap_data': heatmap_data})
 
+from .models import Profile
+from django.contrib.auth.decorators import login_required
+import json
+@login_required
+def save_stock(request):
+    if request.method == "POST":
+        # 獲取當前用戶
+        user = request.user
+        # 獲取股票代號
+        data = json.loads(request.body)
+        stock_code = data.get("stock_code", "")
+
+        # 更新模型
+        profile, created = Profile.objects.get_or_create(user=user)
+        profile.selected_stocks2 = stock_code  # 保存股票代號
+        profile.save()
+
+        return JsonResponse({"message": "股票代號已保存！"}, status=200)
+
+    return JsonResponse({"message": "無效請求"}, status=400)
 
 def hello_world(request):
     time = datetime.now()

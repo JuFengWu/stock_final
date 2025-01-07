@@ -28,4 +28,5 @@ urlpatterns = [
     path('logout/', views.logout_user, name='logout_user'),
     path('api/stock-data/', views.get_stock_data, name='get_stock_data'),
     path('stock_data/', views.show_stock_data, name='show_stock_data'),
+    path('save_stock/', views.save_stock, name='save_stock'),
 ]
