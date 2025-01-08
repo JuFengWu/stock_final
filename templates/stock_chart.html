@@ -1,26 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Stock Chart</title>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <style>
-        .tooltip {
-            position: absolute;
-            background-color: white;
-            border: 1px solid black;
-            padding: 5px;
-            display: none;
-        }
-        .entry-signal {
-            fill: green;
-        }
-        .exit-signal {
-            fill: red;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <title>Stock Chart with Highcharts</title>
 </head>
 <body>
-    <h1>Stock Chart with Signals</h1>
+    <h1>Stock Chart with Highcharts</h1>
 
     <!-- 用戶輸入區域 -->
     <form id="stockForm">
@@ -36,94 +24,15 @@
         <button type="button" id="fetchButton">Fetch Data</button>
     </form>
 
-    <!-- SVG 繪圖區域 -->
-    <svg id="chart" width="800" height="500"></svg>
-    <div class="tooltip" id="tooltip"></div>
+    <!-- Highcharts 繪圖容器 -->
+    <div id="chartContainer" style="width: 800px; height: 500px; margin: 0 auto;"></div>
 
     <script>
-        const svg = d3.select("#chart");
-        const tooltip = d3.select("#tooltip");
-
-        // 清空 SVG 繪圖區域的函數
-        function clearChart() {
-            svg.selectAll("*").remove();
-        }
-
-        // 繪製 K 線圖的函數
-        function drawChart(data) {
-            const margin = { top: 20, right: 30, bottom: 30, left: 50 };
-            const width = +svg.attr("width") - margin.left - margin.right;
-            const height = +svg.attr("height") - margin.top - margin.bottom;
-
-            const x = d3.scaleBand()
-                .domain(data.map(d => d.date))
-                .range([0, width])
-                .padding(0.1);
-
-            const y = d3.scaleLinear()
-                .domain([d3.min(data, d => d.low), d3.max(data, d => d.high)])
-                .range([height, 0]);
-
-            const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-
-            // 繪製 K 線
-            g.selectAll(".candlestick")
-                .data(data)
-                .enter().append("rect")
-                .attr("class", "candlestick")
-                .attr("x", d => x(d.date))
-                .attr("y", d => y(d.high))
-                .attr("width", x.bandwidth())
-                .attr("height", d => y(d.low) - y(d.high))
-                .attr("fill", d => d.open > d.close ? "red" : "green");
-
-            // 繪製進場訊號
-            g.selectAll(".entry-signal")
-                .data(data.filter(d => d.entry_signal))
-                .enter().append("circle")
-                .attr("class", "entry-signal")
-                .attr("cx", d => x(d.date) + x.bandwidth() / 2)
-                .attr("cy", d => y(d.close))
-                .attr("r", 5);
-
-            // 繪製出場訊號
-            g.selectAll(".exit-signal")
-                .data(data.filter(d => d.exit_signal))
-                .enter().append("circle")
-                .attr("class", "exit-signal")
-                .attr("cx", d => x(d.date) + x.bandwidth() / 2)
-                .attr("cy", d => y(d.close))
-                .attr("r", 5);
-
-            // 繪製坐標軸
-            g.append("g")
-                .attr("transform", `translate(0,${height})`)
-                .call(d3.axisBottom(x)
-                    .tickValues(x.domain().filter((d, i) => i % 10 === 0)) // 每 10 天顯示一個標籤
-                    .tickFormat(d => d.slice(5)) // 顯示 MM-DD
-                );
-
-            g.append("g").call(d3.axisLeft(y));
-
-            // Tooltip 功能
-            svg.selectAll("circle")
-                .on("mouseover", (event, d) => {
-                    tooltip.style("display", "block")
-                        .html(`Date: ${d.date}<br>Signal: ${d.entry_signal || d.exit_signal}`)
-                        .style("left", `${event.pageX + 10}px`)
-                        .style("top", `${event.pageY}px`);
-                })
-                .on("mouseout", () => tooltip.style("display", "none"));
-        }
-
         // Fetch API 數據的函數
         function fetchData() {
             const stockCode = document.getElementById("stock_code").value;
             const startDate = document.getElementById("start_date").value;
             const endDate = document.getElementById("end_date").value;
-
-            // 清空圖表
-            clearChart();
 
             fetch(`/api/stock-data/?stock_code=${stockCode}&start_date=${startDate}&end_date=${endDate}`)
                 .then(response => response.json())
@@ -137,6 +46,93 @@
                 .catch(error => {
                     console.error("Error fetching data:", error);
                 });
+        }
+
+        // 繪製 Highcharts K 線圖的函數
+        function drawChart(data) {
+            // 將數據轉換為 Highcharts 格式
+            const ohlc = [];
+            const entrySignals = [];
+            const exitSignals = [];
+
+            data.forEach(item => {
+                // 每個數據點格式: [時間戳, 開盤價, 最高價, 最低價, 收盤價]
+                const point = [
+                    new Date(item.date).getTime(),
+                    item.open,
+                    item.high,
+                    item.low,
+                    item.close
+                ];
+                ohlc.push(point);
+
+                // 添加進場訊號
+                if (item.entry_signal) {
+                    entrySignals.push({
+                        x: new Date(item.date).getTime(),
+                        title: 'E',
+                        text: 'Entry Signal'
+                    });
+                }
+
+                // 添加出場訊號
+                if (item.exit_signal) {
+                    exitSignals.push({
+                        x: new Date(item.date).getTime(),
+                        title: 'X',
+                        text: 'Exit Signal'
+                    });
+                }
+            });
+
+            // 初始化 Highcharts 圖表
+            Highcharts.stockChart('chartContainer', {
+                rangeSelector: {
+                    selected: 1
+                },
+                title: {
+                    text: `Stock Price of ${data[0].stock_code}`
+                },
+                tooltip: {
+                    split: true
+                },
+                yAxis: {
+                    title: {
+                        text: 'Price'
+                    },
+                    labels: {
+                        align: 'left'
+                    }
+                },
+                series: [
+                    {
+                        type: 'candlestick',
+                        name: 'price',
+                        data: ohlc,
+                        tooltip: {
+                            valueDecimals: 2
+                        }
+                    },
+                    {
+                        type: 'flags',
+                        name: 'Entry Signals',
+                        data: entrySignals,
+                        color: '#00FF00',
+                        fillColor: '#00FF00',
+                        shape: 'circle',
+                        width: 16
+                    },
+                    {
+                        type: 'flags',
+                        name: 'Exit Signals',
+                        data: exitSignals,
+                        color: '#FF0000',
+                        fillColor: '#FF0000',
+                        shape: 'circle',
+                        width: 16
+                    }
+                ]
+            });
         }
 
         // 綁定按鈕點擊事件
