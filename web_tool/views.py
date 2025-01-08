@@ -28,7 +28,6 @@ def get_stock_data(request):
 
     # 下載股票數據
     data = yf.download(stock_code, start=start_date, end=end_date)
-
     if data.empty:
         return JsonResponse({"error": "No data found for the given stock code and date range."}, status=400)
 
