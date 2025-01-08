@@ -7,7 +7,7 @@ def send_mail(receiver_email, body2, stock):
 
     sender_email = "jufengwu102000@gmail.com"
 
-    password = "beutpdrcnchxseqa"
+    password = ""
 
     msg = MIMEMultipart()
     msg['From'] = sender_email

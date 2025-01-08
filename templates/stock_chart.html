@@ -50,13 +50,11 @@
 
         // 繪製 Highcharts K 線圖的函數
         function drawChart(data) {
-            // 將數據轉換為 Highcharts 格式
             const ohlc = [];
             const entrySignals = [];
             const exitSignals = [];
 
             data.forEach(item => {
-                // 每個數據點格式: [時間戳, 開盤價, 最高價, 最低價, 收盤價]
                 const point = [
                     new Date(item.date).getTime(),
                     item.open,
@@ -66,32 +64,33 @@
                 ];
                 ohlc.push(point);
 
-                // 添加進場訊號
                 if (item.entry_signal) {
                     entrySignals.push({
                         x: new Date(item.date).getTime(),
-                        title: 'E',
-                        text: 'Entry Signal'
+                        y: item.close,
+                        title: '▲',
+                        text: `Entry Signal: ${item.entry_signal}`,
+                        color: '#FF0000'
                     });
                 }
 
-                // 添加出場訊號
                 if (item.exit_signal) {
                     exitSignals.push({
                         x: new Date(item.date).getTime(),
-                        title: 'X',
-                        text: 'Exit Signal'
+                        y: item.close,
+                        title: '▼',
+                        text: `Exit Signal: ${item.exit_signal}`,
+                        color: '#00FF00'
                     });
                 }
             });
 
-            // 初始化 Highcharts 圖表
             Highcharts.stockChart('chartContainer', {
                 rangeSelector: {
                     selected: 1
                 },
                 title: {
-                    text: `Stock Price of ${data[0].stock_code}`
+                    text: `All`
                 },
                 tooltip: {
                     split: true
@@ -99,15 +98,13 @@
                 yAxis: {
                     title: {
                         text: 'Price'
-                    },
-                    labels: {
-                        align: 'left'
                     }
                 },
                 series: [
                     {
                         type: 'candlestick',
-                        name: 'price',
+                        id: 'ohlc-series',
+                        name: 'OHLC',
                         data: ohlc,
                         tooltip: {
                             valueDecimals: 2
@@ -117,19 +114,27 @@
                         type: 'flags',
                         name: 'Entry Signals',
                         data: entrySignals,
-                        color: '#00FF00',
-                        fillColor: '#00FF00',
-                        shape: 'circle',
-                        width: 16
+                        onSeries: 'ohlc-series',
+                        shape: 'circlepin',
+                        width: 16,
+                        color: '#FF0000',
+                        fillColor: '#FF0000',
+                        style: {
+                            color: '#FFFFFF'
+                        }
                     },
                     {
                         type: 'flags',
                         name: 'Exit Signals',
                         data: exitSignals,
-                        color: '#FF0000',
-                        fillColor: '#FF0000',
-                        shape: 'circle',
-                        width: 16
+                        onSeries: 'ohlc-series',
+                        shape: 'circlepin',
+                        width: 16,
+                        color: '#00FF00',
+                        fillColor: '#00FF00',
+                        style: {
+                            color: '#FFFFFF'
+                        }
                     }
                 ]
             });
