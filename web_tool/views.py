@@ -25,6 +25,10 @@ def get_stock_data(request):
     stock_code = request.GET.get('stock_code', 'AAPL')  # 默認為 AAPL
     start_date = request.GET.get('start_date', '2024-01-01')
     end_date = request.GET.get('end_date', '2024-12-31')
+    raw_indicators = request.GET.get('indicators', '')  # 獲取逗號分隔的字串
+    selected_indicators = raw_indicators.split(',')  # 將字串轉換為列表
+    
+    print(f"Selected indicators: {selected_indicators}")
 
     # 下載股票數據
     data = yf.download(stock_code, start=start_date, end=end_date)
@@ -43,37 +47,41 @@ def get_stock_data(request):
     # 計算 MACD_hist 的前一日值
     data['MACD_hist_prev'] = data['MACD_hist'].shift(1)
 
-    # 計算進出場訊號
-    def get_entry_signal(row):
+    def get_entry_signal(row, selected_indicators):
         signals = []
-        if row['RSI'] < 30:
+        if 'RSI' in selected_indicators and row['RSI'] < 30:
             signals.append("RSI")
-        if row['K'] < 20:
+        if 'KD' in selected_indicators and row['K'] < 20:
             signals.append("KD")
-        if row['Close'] <= row['Lower']:
+        if 'Bollinger' in selected_indicators and row['Close'] <= row['Lower']:
             signals.append("Bollinger")
-        if row['ADX'] < 20:
+        if 'ADX' in selected_indicators and row['ADX'] < 20:
             signals.append("ADX")
-        if row['MACD_hist'] > 0 and row['MACD_hist_prev'] <= 0:
+        if 'MACD' in selected_indicators and row['MACD_hist'] > 0 and row['MACD_hist_prev'] <= 0:
             signals.append("MACD")
         return ", ".join(signals) if signals else ""
 
-    def get_exit_signal(row):
+    def get_exit_signal(row, selected_indicators):
         signals = []
-        if row['RSI'] > 70:
+        if 'RSI' in selected_indicators and row['RSI'] > 70:
             signals.append("RSI")
-        if row['K'] > 80:
+        if 'KD' in selected_indicators and row['K'] > 80:
             signals.append("KD")
-        if row['Close'] >= row['Upper']:
+        if 'Bollinger' in selected_indicators and row['Close'] >= row['Upper']:
             signals.append("Bollinger")
-        if row['ADX'] > 30:
+        if 'ADX' in selected_indicators and row['ADX'] > 30:
             signals.append("ADX")
-        if row['MACD_hist'] < 0 and row['MACD_hist_prev'] >= 0:
+        if 'MACD' in selected_indicators and row['MACD_hist'] < 0 and row['MACD_hist_prev'] >= 0:
             signals.append("MACD")
         return ", ".join(signals) if signals else ""
 
-    data['EntrySignal'] = data.apply(get_entry_signal, axis=1)
-    data['ExitSignal'] = data.apply(get_exit_signal, axis=1)
+    # 假設 selected_indicators 是從前端獲取的，例如：
+    #selected_indicators = ['RSI', 'KD', 'MACD']  # 這裡是範例數據
+    
+
+    # 使用 lambda 傳遞 selected_indicators
+    data['EntrySignal'] = data.apply(lambda row: get_entry_signal(row, selected_indicators), axis=1)
+    data['ExitSignal'] = data.apply(lambda row: get_exit_signal(row, selected_indicators), axis=1)
 
     # 整理成 JSON 格式
     result = []

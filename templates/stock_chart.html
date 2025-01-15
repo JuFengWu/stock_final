@@ -20,6 +20,29 @@
 
         <label for="end_date">End Date:</label>
         <input type="date" id="end_date" name="end_date" value="2024-12-31" required><br><br>
+        
+        <fieldset>
+            <legend>Select Indicators to Display:</legend>
+            <label>
+                <input type="checkbox" name="indicator" value="RSI" checked> RSI
+            </label>
+            <label>
+                <input type="checkbox" name="indicator" value="KD" checked> KD
+            </label>
+            <label>
+                <input type="checkbox" name="indicator" value="MACD" checked> MACD
+            </label>
+            <label>
+                <input type="checkbox" name="indicator" value="Bollinger" checked> Bollinger Bands
+            </label>
+            <label>
+                <input type="checkbox" name="indicator" value="ADX" checked> ADX
+            </label>
+            <label>
+                <input type="checkbox" name="indicator" value="DMI" checked> DMI
+            </label>
+        </fieldset>
+        <br>
 
         <button type="button" id="fetchButton">Fetch Data</button>
     </form>
@@ -33,8 +56,19 @@
             const stockCode = document.getElementById("stock_code").value;
             const startDate = document.getElementById("start_date").value;
             const endDate = document.getElementById("end_date").value;
+            // 獲取所有被選中的指標
+            const selectedIndicators = Array.from(document.querySelectorAll('input[name="indicator"]:checked'))
+                .map(input => input.value);
 
-            fetch(`/api/stock-data/?stock_code=${stockCode}&start_date=${startDate}&end_date=${endDate}`)
+            // 構造查詢參數
+            const queryParams = new URLSearchParams({
+                stock_code: stockCode,
+                start_date: startDate,
+                end_date: endDate,
+                indicators: selectedIndicators
+            });
+
+            fetch(`/api/stock-data/?${queryParams.toString()}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
@@ -48,93 +82,81 @@
                 });
         }
 
-        // 繪製 Highcharts K 線圖的函數
         function drawChart(data) {
             const ohlc = [];
+            const rsi = [];
+            const kLine = [];
+            const dLine = [];
+            const macd = [];
+            const macdSignal = [];
+            const macdHist = [];
+            const upperBand = [];
+            const middleBand = [];
+            const lowerBand = [];
+            const adx = [];
+            const plusDI = [];
+            const minusDI = [];
             const entrySignals = [];
             const exitSignals = [];
 
             data.forEach(item => {
-                const point = [
-                    new Date(item.date).getTime(),
-                    item.open,
-                    item.high,
-                    item.low,
-                    item.close
-                ];
-                ohlc.push(point);
+                const time = new Date(item.date).getTime();
+                ohlc.push([time, item.open, item.high, item.low, item.close]);
+                rsi.push([time, item.rsi]);
+                kLine.push([time, item.k]);
+                dLine.push([time, item.d]);
+                macd.push([time, item.macd]);
+                macdSignal.push([time, item.macd_signal]);
+                macdHist.push([time, item.macd_hist]);
+                upperBand.push([time, item.upper]);
+                middleBand.push([time, item.middle]);
+                lowerBand.push([time, item.lower]);
+                adx.push([time, item.adx]);
+                plusDI.push([time, item.plus_di]);
+                minusDI.push([time, item.minus_di]);
 
                 if (item.entry_signal) {
                     entrySignals.push({
-                        x: new Date(item.date).getTime(),
+                        x: time,
                         y: item.close,
                         title: '▲',
-                        text: `Entry Signal: ${item.entry_signal}`,
-                        color: '#FF0000'
+                        text: `Entry Signal: ${item.entry_signal}`
                     });
                 }
 
                 if (item.exit_signal) {
                     exitSignals.push({
-                        x: new Date(item.date).getTime(),
+                        x: time,
                         y: item.close,
                         title: '▼',
-                        text: `Exit Signal: ${item.exit_signal}`,
-                        color: '#00FF00'
+                        text: `Exit Signal: ${item.exit_signal}`
                     });
                 }
             });
 
+            // 主圖：K 線圖
             Highcharts.stockChart('chartContainer', {
-                rangeSelector: {
-                    selected: 1
-                },
-                title: {
-                    text: `All`
-                },
-                tooltip: {
-                    split: true
-                },
-                yAxis: {
-                    title: {
-                        text: 'Price'
-                    }
-                },
+                rangeSelector: { selected: 1 },
+                title: { text: 'Stock Chart with Signals' },
                 series: [
                     {
                         type: 'candlestick',
-                        id: 'ohlc-series',
-                        name: 'OHLC',
-                        data: ohlc,
-                        tooltip: {
-                            valueDecimals: 2
-                        }
+                        name: 'Stocks',
+                        data: ohlc
                     },
                     {
                         type: 'flags',
                         name: 'Entry Signals',
                         data: entrySignals,
-                        onSeries: 'ohlc-series',
                         shape: 'circlepin',
-                        width: 16,
-                        color: '#FF0000',
-                        fillColor: '#FF0000',
-                        style: {
-                            color: '#FFFFFF'
-                        }
+                        color: '#FF0000'
                     },
                     {
                         type: 'flags',
                         name: 'Exit Signals',
                         data: exitSignals,
-                        onSeries: 'ohlc-series',
                         shape: 'circlepin',
-                        width: 16,
-                        color: '#00FF00',
-                        fillColor: '#00FF00',
-                        style: {
-                            color: '#FFFFFF'
-                        }
+                        color: '#00FF00'
                     }
                 ]
             });
