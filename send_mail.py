@@ -67,12 +67,12 @@ def list_users():
             for date, methods in data.items():
                 formatted_string = f"{date}:\n{methods}\n"
                 result += formatted_string
-            send_mail("leowu102000@gmail.com",result,stock)
+            send_mail(user.email,result,stock)
 
 from eps import get_current_price2, select_stock, get_stream
 import yfinance as yf
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 def process(stock_code):
         stockID = stock_code
         divd = select_stock.dividend_yield_method(stockID)# 股利法
@@ -89,9 +89,19 @@ def process(stock_code):
 
         #date_range_start = pd.to_datetime(target_date) - pd.Timedelta(days=7)
         #date_range_end = pd.to_datetime(target_date) + pd.Timedelta(days=7)
-        today = datetime.today().strftime('%Y-%m-%d')
-        lastDay = "2025-01-01"
-        today = "2025-01-07"
+       
+
+        today = datetime.today()
+
+        # 計算前七天的日期
+        seven_days_ago = today - timedelta(days=7)
+
+        # 將日期格式化為字串
+        seven_days_ago_str = seven_days_ago.strftime('%Y-%m-%d')
+        today_str = today.strftime('%Y-%m-%d')
+        
+        lastDay = seven_days_ago_str
+        today = today_str
         data = yf.download(stockID+".TW", start=lastDay, end=today)
         data['Date'] = data.index
         data['Date'] = pd.to_datetime(data['Date'])
